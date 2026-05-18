@@ -135,7 +135,7 @@ else:
             with st.expander(f"📦 #{id_act} - {tit_act} ({fec_act})"):
                 # Aquí generaríamos la URL real una vez publicado, por ahora simula localhost
                 # En producción reemplaza esto por la URL que te dé Streamlit Share
-                url_base = "https://tu-app.streamlit.app" 
+                url_base = "https://appcodigoqrpy-qq6t4cdkwkunwgqtxywuez.streamlit.app" 
                 url_destino = f"{url_base}/?id={id_act}"
                 
                 st.write(f"**Enlace del QR:** `{url_destino}`")
