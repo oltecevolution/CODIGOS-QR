@@ -6,7 +6,7 @@ import io
 import os
 
 # Configuración de la página
-st.set_page_config(page_title="Enterprise QR System", page_icon="🔍", layout="冷静")
+st.set_page_config(page_title="Enterprise QR System", page_icon="🔍", layout="wide")
 
 DB_FILE = "qr_streamlit.db"
 
