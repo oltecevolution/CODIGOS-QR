@@ -10,7 +10,7 @@ st.set_page_config(page_title="Enterprise QR System", page_icon="🔍", layout="
 
 DB_FILE = "qr_streamlit.db"
 
-# --- FUNCIONES DE BASE DE DATOS (SQLite nativo para Streamlit) ---
+# --- FUNCIONES DE BASE DE DATOS ---
 def conectar_db():
     conn = sqlite3.connect(DB_FILE)
     return conn
@@ -35,7 +35,6 @@ def crear_tablas():
 crear_tablas()
 
 # --- DETECTAR SI ES UN ESCANEO DE QR O EL PANEL ADMINISTRADOR ---
-# Si la URL tiene un formato como: app.streamlit.app/?id=1
 query_params = st.query_params
 
 if "id" in query_params:
@@ -52,11 +51,10 @@ if "id" in query_params:
         titulo, descripcion, fecha, logo_bytes, imagen_bytes, tabla_json = row
         tabla_datos = json.loads(tabla_json)
         
-        # Diseño de la Ficha Técnica
         col_tit, col_logo = st.columns([3, 1])
         with col_tit:
             st.title(titulo)
-            st.caption(f"📅 Fecha de Referencia: {fecha}")
+            st.caption(f"📅 Última Actualización / F. Ref: {fecha}")
         with col_logo:
             if logo_bytes:
                 st.image(logo_bytes, width=100)
@@ -65,7 +63,6 @@ if "id" in query_params:
             st.info(descripcion)
             
         st.subheader("📋 Especificaciones Técnicas")
-        # Mostrar tabla estilizada
         st.table(tabla_datos)
         
         if imagen_bytes:
@@ -78,7 +75,7 @@ else:
     # --- PANEL DE CONTROL ADMINISTRADOR ---
     st.title("🎛️ Panel de Control QR Asset Manager")
     
-    tab1, tab2 = st.tabs(["🆕 Crear Activo", "📦 Ver Inventario"])
+    tab1, tab2 = st.tabs(["🆕 Crear Activo", "📦 Ver e Invetario / Editar"])
     
     with tab1:
         st.header("Crear Nuevo Activo QR")
@@ -87,8 +84,8 @@ else:
             fecha = st.date_input("Fecha de Referencia")
             descripcion = st.text_area("Descripción General")
             
-            logo_file = st.file_uploader("Subir Logo Corporativo", type=["png", "jpg", "jpeg"])
-            imagen_file = st.file_uploader("Subir Imagen del Activo", type=["png", "jpg", "jpeg"])
+            logo_file = st.file_uploader("Subir Logo Corporativo", type=["png", "jpg", "jpeg"], key="logo_crear")
+            imagen_file = st.file_uploader("Subir Imagen del Activo", type=["png", "jpg", "jpeg"], key="img_crear")
             
             st.write("---")
             st.subheader("Tabla de Datos Dinámica (Formato Llave: Valor)")
@@ -98,7 +95,6 @@ else:
             boton_guardar = st.form_submit_button("Guardar Activo")
             
             if boton_guardar and titulo:
-                # Procesar Tabla JSON
                 diccionario_tabla = {}
                 if tabla_input:
                     items = tabla_input.split(",")
@@ -107,11 +103,9 @@ else:
                             k, v = i.split(":", 1)
                             diccionario_tabla[k.strip()] = v.strip()
                 
-                # Procesar Archivos a Bytes
                 logo_bytes = logo_file.read() if logo_file else None
                 img_bytes = imagen_file.read() if imagen_file else None
                 
-                # Guardar en BD
                 conn = conectar_db()
                 cursor = conn.cursor()
                 cursor.execute('''
@@ -120,31 +114,92 @@ else:
                 ''', (titulo, descripcion, str(fecha), logo_bytes, img_bytes, json.dumps(diccionario_tabla)))
                 conn.commit()
                 conn.close()
-                st.success(f"¡Activo '{titulo}' creado con éxito! Ve al inventario para obtener tu QR.")
+                st.success(f"¡Activo '{titulo}' creado con éxito!")
+                st.rerun()
                 
     with tab2:
-        st.header("Activos Registrados")
+        st.header("Activos Registrados e Historial")
+        
         conn = conectar_db()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, titulo, fecha FROM qritems")
+        cursor.execute("SELECT id, titulo, fecha, descripcion, tabla_json FROM qritems")
         activos = cursor.fetchall()
         conn.close()
         
         for act in activos:
-            id_act, tit_act, fec_act = act
-            with st.expander(f"📦 #{id_act} - {tit_act} ({fec_act})"):
-                # Aquí generaríamos la URL real una vez publicado, por ahora simula localhost
-                # En producción reemplaza esto por la URL que te dé Streamlit Share
-                url_base = "https://appcodigoqrpy-qq6t4cdkwkunwgqtxywuez.streamlit.app" 
+            id_act, tit_act, fec_act, desc_act, json_act = act
+            
+            with st.expander(f"📦 #{id_act} - {tit_act} (Último cambio: {fec_act})"):
+                
+                # REEMPLAZA ESTO CON TU URL REAL DE STREAMLIT
+                url_base = "https://angel-codigos-qr.streamlit.app" 
                 url_destino = f"{url_base}/?id={id_act}"
                 
-                st.write(f"**Enlace del QR:** `{url_destino}`")
+                col1, col2 = st.columns([1, 1])
                 
-                # Generar QR en memoria
-                qr = qrcode.make(url_destino)
-                buf = io.BytesIO()
-                qr.save(buf, format="PNG")
-                byte_im = buf.getvalue()
+                with col1:
+                    st.subheader("Visualización y Descarga del QR")
+                    st.write(f"**Enlace permanente:** `{url_destino}`")
+                    
+                    # Generar código QR
+                    qr = qrcode.make(url_destino)
+                    buf = io.BytesIO()
+                    qr.save(buf, format="PNG")
+                    byte_im = buf.getvalue()
+                    
+                    st.image(byte_im, width=180)
+                    st.download_button(label="📥 Descargar Código QR", data=byte_im, file_name=f"QR_{id_act}.png", mime="image/png", key=f"dl_{id_act}")
                 
-                st.image(byte_im, width=200, caption="Código QR para imprimir")
-                st.download_button(label="📥 Descargar Código QR", data=byte_im, file_name=f"QR_{id_act}.png", mime="image/png")
+                with col2:
+                    st.subheader(f"📝 Editar Información de #{id_act}")
+                    
+                    # Formulario de edición periódica
+                    with st.form(f"form_editar_{id_act}"):
+                        nuevo_titulo = st.text_input("Editar Título", value=tit_act)
+                        nueva_fecha = st.text_input("Fecha de Actualización (AAAA-MM-DD)", value=fec_act)
+                        nueva_desc = st.text_area("Editar Descripción", value=desc_act)
+                        
+                        # Convertir el JSON de vuelta a texto plano para que el usuario pueda editarlo fácil
+                        datos_dicc = json.loads(json_act)
+                        texto_tabla_actual = ", ".join([f"{k}:{v}" for k, v in datos_dicc.items()])
+                        nueva_tabla_input = st.text_input("Modificar Tabla de Datos", value=texto_tabla_actual)
+                        
+                        st.caption("Archivos actuales preservados. Si subes uno nuevo, se reemplazará:")
+                        nuevo_logo_file = st.file_uploader("Reemplazar Logo", type=["png", "jpg", "jpeg"], key=f"logo_edit_{id_act}")
+                        nuevo_img_file = st.file_uploader("Reemplazar Imagen", type=["png", "jpg", "jpeg"], key=f"img_edit_{id_act}")
+                        
+                        boton_actualizar = st.form_submit_button("💾 Guardar Cambios")
+                        
+                        if boton_actualizar:
+                            # Procesar la nueva tabla
+                            nuevo_dicc = {}
+                            if nueva_tabla_input:
+                                items_nuevos = nueva_tabla_input.split(",")
+                                for i in items_nuevos:
+                                    if ":" in i:
+                                        k, v = i.split(":", 1)
+                                        nuevo_dicc[k.strip()] = v.strip()
+                            
+                            conn = conectar_db()
+                            cursor = conn.cursor()
+                            
+                            # Actualizar texto y datos básicos
+                            cursor.execute('''
+                                UPDATE qritems 
+                                SET titulo = ?, fecha = ?, descripcion = ?, tabla_json = ? 
+                                WHERE id = ?
+                            ''', (nuevo_titulo, nueva_fecha, nueva_desc, json.dumps(nuevo_dicc), id_act))
+                            
+                            # Si subió un logo nuevo, actualizarlo en la celda BLOB
+                            if nuevo_logo_file:
+                                cursor.execute("UPDATE qritems SET logo_bytes = ? WHERE id = ?", (nuevo_logo_file.read(), id_act))
+                            
+                            # Si subió una imagen nueva, actualizarla en la celda BLOB
+                            if nuevo_img_file:
+                                cursor.execute("UPDATE qritems SET imagen_bytes = ? WHERE id = ?", (nuevo_img_file.read(), id_act))
+                                
+                            conn.commit()
+                            conn.close()
+                            
+                            st.success("¡Información actualizada periódicamente con éxito!")
+                            st.rerun()
