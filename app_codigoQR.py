@@ -203,3 +203,20 @@ else:
                             
                             st.success("¡Información actualizada periódicamente con éxito!")
                             st.rerun()
+                            # --- BOTÓN DE ELIMINACIÓN ---
+                    st.write("---")
+                    # Usamos un expander para evitar que el usuario lo borre por accidente
+                    with st.expander("⚠️ Zona de Peligro (Eliminar Activo)"):
+                        st.warning("Esta acción es irreversible. Se borrarán todos los datos y fotos asociados.")
+                        boton_eliminar = st.button(f"🚨 Confirmar Eliminación de #{id_act}", key=f"btn_del_{id_act}")
+                        
+                        if boton_eliminar:
+                            conn = conectar_db()
+                            cursor = conn.cursor()
+                            # Borramos el registro de la tabla usando su ID único
+                            cursor.execute("DELETE FROM qritems WHERE id = ?", (id_act,))
+                            conn.commit()
+                            conn.close()
+                            
+                            st.error(f"El activo #{id_act} ha sido eliminado del sistema.")
+                            st.rerun()
