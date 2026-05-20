@@ -132,7 +132,7 @@ else:
             with st.expander(f"📦 #{id_act} - {tit_act} (Último cambio: {fec_act})"):
                 
                 # REEMPLAZA ESTO CON TU URL REAL DE STREAMLIT
-                url_base = "https://angel-codigos-qr.streamlit.app" 
+                url_base = "https://appcodigoqrpy-qq6t4cdkwkunwgqtxywuez.streamlit.app" 
                 url_destino = f"{url_base}/?id={id_act}"
                 
                 col1, col2 = st.columns([1, 1])
