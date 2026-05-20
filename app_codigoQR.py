@@ -6,7 +6,7 @@ import io
 import os
 
 # Configuración de la página
-st.set_page_config(page_title="Oltec Evolution - QR Asset Manager", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="Oltec Evolution - QR Manager", page_icon="⚡", layout="wide")
 
 DB_FILE = "qr_streamlit.db"
 
@@ -122,7 +122,7 @@ else:
             descripcion = st.text_area("Descripción General / Trabajo Realizado", placeholder="Ej. Se detectó fuga de aceite...")
             
             st.write("---")
-            st.subheader("Tabla de Datos Técnicos Dinámica (Formato Llave: Valor)")
+            st.subheader("Datos Tecnicos")
             st.caption("Escribe las propiedades separadas por comas. Ej: Voltaje:220V, Presión:Aceptable, Aceite:Bitoil")
             tabla_input = st.text_input("Propiedades Técnicas", placeholder="Presión Válvula:Estable, Aceite Motor:Bitoil, Filtro:Nuevo")
             
